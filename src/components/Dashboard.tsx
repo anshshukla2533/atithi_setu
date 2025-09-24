@@ -131,7 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole = 'traveler' }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-info bg-clip-text text-transparent">
-              SafeTour {userRole === 'admin' ? 'Command Center' : userRole === 'friend' ? 'Network' : 'Dashboard'}
+              Atithi Setu {userRole === 'admin' ? 'Command Center' : userRole === 'friend' ? 'Network' : 'Dashboard'}
             </h1>
             <p className="text-muted-foreground">
               {userRole === 'admin' 

@@ -20,7 +20,7 @@ export function Navbar() {
       <div className="container mx-auto px-4 flex h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 font-bold text-xl">
-          SafeTour
+          Atithi Setu
         </Link>
 
         {/* Desktop Nav */}
