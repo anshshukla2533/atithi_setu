@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import GoogleMapDashboard from './GoogleMapDashboard';
-import SafeTourMap from './SafeTourMap';
+import { GoogleLiveMap } from './map/GoogleLiveMap';
 import { 
   Shield, 
   AlertTriangle, 
@@ -224,7 +224,23 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole = 'traveler' }) => {
                 </p>
               </CardHeader>
               <CardContent>
-                <SafeTourMap height="h-[600px]" showControls={true} />
+                <div style={{ height: 400 }}>
+                  <GoogleLiveMap
+                    center={{ lat: 17.385, lng: 78.4867 }} // Hyderabad
+                    zoom={7}
+                    polyline={[
+                      { lat: 17.385, lng: 78.4867 },
+                      { lat: 17.0, lng: 79.5 },
+                      { lat: 16.3067, lng: 80.4428 }
+                    ]}
+                    markers={[
+                      { id: 'me', lat: 17.385, lng: 78.4867, name: 'You', status: 'Present Location' },
+                      { id: 'guntur', lat: 16.3067, lng: 80.4428, name: 'Guntur', status: 'Destination' },
+                      { id: 'friend', lat: 17.395, lng: 78.4967, name: 'Dummy Friend', status: 'Dummy Friend' }
+                    ]}
+                  />
+                </div>
+                <div className="text-center text-muted-foreground mt-2 text-sm">Red circles show dummy dangerous zones (feature coming soon)</div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -37,7 +37,7 @@ export interface TrackingUser extends UserStatus {
 }
 
 class LocationService {
-  private baseUrl = 'http://localhost:5000/api';
+  private baseUrl = 'http://localhost:4100/api';
 
   async updateLocation(
     userId: string,

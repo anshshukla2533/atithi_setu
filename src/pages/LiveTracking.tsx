@@ -39,6 +39,8 @@ export default function LiveTrackingPage() {
   const [trackPoints, setTrackPoints] = useState<Array<{ lat: number; lng: number }>>([])
   // Fetch real route from Google Directions API
   const [directionsPolyline, setDirectionsPolyline] = useState<Array<{ lat: number; lng: number }>>([]);
+  // Dummy friend marker state
+  const [showFriend, setShowFriend] = useState(false);
 
   // Example trip data - replace with actual data from your backend
   const trip = {
@@ -332,15 +334,29 @@ export default function LiveTrackingPage() {
                   lng: 80.4428,
                   name: 'Guntur, Andhra Pradesh',
                   status: 'Checkpoint'
-                }
+                },
+                // Dummy friend marker if toggled (use location if available, else base on Guntur)
+                ...(showFriend ? [{
+                  id: 'friend',
+                  lat: (location ? location.coordinates[1] : 16.3067) + 0.005,
+                  lng: (location ? location.coordinates[0] : 80.4428) + 0.005,
+                  name: 'Joe (Friend)',
+                  status: 'Nearby (Mesh)'
+                }] : [])
               ]}
             />
-            <div className="flex justify-center mt-4">
+            <div className="flex flex-col items-center mt-4 gap-2">
               <Button
                 onClick={isTracking ? stopTracking : startTracking}
                 variant={isTracking ? "destructive" : "default"}
               >
                 {isTracking ? "Stop Tracking" : "Start Tracking"}
+              </Button>
+              <Button
+                variant={showFriend ? "secondary" : "outline"}
+                onClick={() => setShowFriend((prev) => !prev)}
+              >
+                {showFriend ? "Hide Friend on Map" : "View Friend on Map"}
               </Button>
             </div>
           </CardContent>

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Dashboard from '@/components/Dashboard';
-import SafeTourMap from '@/components/SafeTourMap';
+import { GoogleLiveMap } from '@/components/map/GoogleLiveMap';
 import GoogleMapDanger from '@/components/GoogleMapDanger';
 import { 
   Shield, 
@@ -19,6 +19,7 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
+
 import { useAuth } from '@/contexts/auth-context';
 
 type UserRole = 'traveler' | 'admin' | 'friend' | null;
@@ -87,11 +88,24 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Google Map with Danger Zones */}
+          {/* Google Map with Route to Guntur and Dummy Danger Areas */}
           <div className="max-w-5xl mx-auto my-8">
             <h2 className="text-2xl font-bold mb-4 text-center">Live Area Map (Demo)</h2>
-            <GoogleMapDanger />
-            <div className="text-center text-muted-foreground mt-2 text-sm">Red circles show dummy dangerous zones</div>
+            <GoogleLiveMap
+              center={{ lat: 17.385, lng: 78.4867 }} // Hyderabad
+              zoom={7}
+              polyline={[
+                { lat: 17.385, lng: 78.4867 },
+                { lat: 17.0, lng: 79.5 },
+                { lat: 16.3067, lng: 80.4428 }
+              ]}
+              markers={[
+                { id: 'me', lat: 17.385, lng: 78.4867, name: 'You', status: 'Present Location' },
+                { id: 'guntur', lat: 16.3067, lng: 80.4428, name: 'Guntur', status: 'Destination' },
+                { id: 'friend', lat: 17.395, lng: 78.4967, name: 'Dummy Friend', status: 'Dummy Friend' }
+              ]}
+            />
+            <div className="text-center text-muted-foreground mt-2 text-sm">Red circles show dummy dangerous zones (feature coming soon)</div>
           </div>
         </div>
       </section>

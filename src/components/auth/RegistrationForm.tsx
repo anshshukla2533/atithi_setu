@@ -1,4 +1,5 @@
 import { useState } from "react"
+import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,36 +25,52 @@ export function RegistrationForm() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1)
-  const [mobile, setMobile] = useState("")
-  const [otp, setOtp] = useState("")
-  const [sentOtp, setSentOtp] = useState("")
-  const [mobileVerified, setMobileVerified] = useState(false)
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [otp, setOtp] = useState("");
+  const [sentOtp, setSentOtp] = useState("");
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [documentType, setDocumentType] = useState("");
+  const [documentNumber, setDocumentNumber] = useState("");
 
-  // Mock send OTP
-  const handleSendOtp = (e: React.FormEvent) => {
+  // Send OTP via backend
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Accept numbers with or without spaces/dashes, with or without +91
-    const cleaned = mobile.replace(/[^\d]/g, "")
-    if (!(cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith("91")))) {
-      toast({ title: "Invalid Mobile Number", description: "Please enter a valid number.", variant: "destructive" })
-      return
+    setIsLoading(true)
+    try {
+      const res = await axios.post("/api/user/send-otp", { mobile })
+      if (res.data.ok) {
+        toast({ title: "OTP Sent", description: "Check your SMS for the OTP." })
+        setSentOtp("sent")
+      } else {
+        toast({ title: "Error", description: res.data.error || "Failed to send OTP", variant: "destructive" })
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.response?.data?.error || "Failed to send OTP", variant: "destructive" })
     }
-    const generated = (Math.floor(100000 + Math.random() * 900000)).toString()
-    setSentOtp(generated)
-    toast({ title: "OTP Sent", description: `Mock OTP: ${generated}` })
+    setIsLoading(false)
   }
 
-  // Mock verify OTP
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  // Verify OTP via backend
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (otp === sentOtp && sentOtp) {
-      toast({ title: "Verified", description: "Mobile number verified." })
-      setMobileVerified(true)
-    } else {
-      toast({ title: "Invalid OTP", description: "Please try again.", variant: "destructive" })
+    setIsLoading(true)
+    try {
+      const res = await axios.post("/api/user/verify-registration-otp", { mobile, otp })
+      if (res.data.ok) {
+        toast({ title: "Verified", description: "Mobile number verified." })
+        setMobileVerified(true)
+        setStep(2) // Advance to next step after OTP verification
+      } else {
+        toast({ title: "Invalid OTP", description: res.data.error || "Please try again.", variant: "destructive" })
+      }
+    } catch (err: any) {
+      toast({ title: "Invalid OTP", description: err.response?.data?.error || "Please try again.", variant: "destructive" })
     }
+    setIsLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,15 +115,15 @@ export function RegistrationForm() {
             <div className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="As per official documents" required />
+                <Input id="name" placeholder="As per official documents" required value={name} onChange={e => setName(e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" required />
+                <Input id="email" type="email" placeholder="you@example.com" required value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" type="tel" placeholder="+91..." required />
+                <Input id="phone" type="tel" placeholder="+91..." required value={mobile} onChange={e => setMobile(e.target.value)} disabled={mobileVerified} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
@@ -118,7 +135,7 @@ export function RegistrationForm() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="document-type">ID Document Type</Label>
-                <Select>
+                <Select value={documentType} onValueChange={setDocumentType}>
                   <SelectTrigger id="document-type">
                     <SelectValue placeholder="Select verification document" />
                   </SelectTrigger>
@@ -134,13 +151,15 @@ export function RegistrationForm() {
                   id="document-number" 
                   placeholder="Enter your Aadhaar/Passport number" 
                   required 
+                  value={documentNumber}
+                  onChange={e => setDocumentNumber(e.target.value)}
                 />
               </div>
             </div>
             <CardFooter className="flex flex-col gap-4 items-stretch">
-              <Button className="w-full" type="submit" disabled={isLoading}>Continue to Emergency Contacts</Button>
+              <Button className="w-full" type="submit" disabled={isLoading || !mobileVerified}>Continue to Emergency Contacts</Button>
               <div className="border-t pt-4 mt-4">
-                <div className="font-semibold mb-2">Verify Mobile (Optional)</div>
+                <div className="font-semibold mb-2">Verify Mobile <span className="text-red-500">(Required)</span></div>
                 <form onSubmit={handleSendOtp} className="flex gap-2 mb-2">
                   <Input
                     id="mobile"
@@ -164,6 +183,7 @@ export function RegistrationForm() {
                   </form>
                 )}
                 {mobileVerified && <div className="text-green-600 text-sm mt-1">Mobile verified!</div>}
+                {!mobileVerified && <div className="text-red-500 text-xs mt-1">You must verify your mobile to continue.</div>}
               </div>
             </CardFooter>
           </form>

@@ -1,15 +1,74 @@
+// ...existing code...
+// (Move these endpoints after app is initialized below)
+
 import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server as IOServer } from "socket.io";
-import { pool, query, ensureUsersTable, testConnection } from './db.mysql.js';
+import { connectDB } from './db.mysql.js';
+import twilio from 'twilio';
 import bcrypt from 'bcryptjs';
 import fetch from 'node-fetch';
+// ...existing code...
+// (All route definitions moved below app initialization)
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Registration OTP: send OTP
+app.post('/api/user/send-otp', async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile || mobile.length < 10) {
+      return res.status(400).json({ error: 'Valid mobile number required' });
+    }
+    // Generate OTP (6 digit)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    otpStore.set(mobile, { otp, expiresAt });
+    // Send OTP via SMS using Twilio
+    try {
+      await twilioClient.messages.create({
+        body: `Your Safe App registration OTP is: ${otp}`,
+        from: TWILIO_PHONE_NUMBER,
+        to: mobile.startsWith('+') ? mobile : `+91${mobile}`
+      });
+    } catch (smsErr) {
+      console.error('Failed to send OTP SMS:', smsErr);
+      return res.status(500).json({ error: 'Failed to send OTP SMS' });
+    }
+    res.json({ ok: true, message: 'OTP sent' });
+  } catch (err) {
+    console.error('Send OTP error:', err);
+    res.status(500).json({ error: 'Failed to send OTP', details: err.message });
+  }
+});
+
+// Registration OTP: verify OTP
+app.post('/api/user/verify-registration-otp', async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+    if (!mobile || !otp) {
+      return res.status(400).json({ error: 'Mobile and OTP required' });
+    }
+    const otpEntry = otpStore.get(mobile);
+    if (!otpEntry || otpEntry.otp !== otp) {
+      return res.status(401).json({ error: 'Invalid OTP' });
+    }
+    if (Date.now() > otpEntry.expiresAt) {
+      otpStore.delete(mobile);
+      return res.status(401).json({ error: 'OTP expired' });
+    }
+    otpStore.delete(mobile);
+    res.json({ ok: true, message: 'Mobile verified' });
+  } catch (err) {
+    console.error('Verify registration OTP error:', err);
+    res.status(500).json({ error: 'OTP verification failed', details: err.message });
+  }
+});
 
 const httpServer = createServer(app);
 const io = new IOServer(httpServer, {
@@ -21,14 +80,22 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => console.log("Socket disconnected:", socket.id));
 });
 
-// In-memory stores (for demo/prototyping)
-const routes = new Map(); // userId -> [{lat,lng}, ...]
+// --- In-memory stores ---
+const routes = new Map();         // userId -> [{lat,lng}, ...]
 const recentLocations = new Map(); // userId -> [{lat,lng,timestamp}, ...]
 const alerts = [];
+// OTP store: key is user id (mobile or name), value is { otp, expiresAt }
+const otpStore = new Map();
 
-function toRad(deg) {
-  return (deg * Math.PI) / 180;
-}
+// Twilio setup
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+
+// --- Helper functions ---
+function toRad(deg) { return (deg * Math.PI) / 180; }
 
 function haversineDistance(a, b) {
   const R = 6371000; // meters
@@ -44,9 +111,7 @@ function haversineDistance(a, b) {
   return R * c;
 }
 
-// Distance from point p to segment ab (in meters)
 function pointToSegmentDistance(p, a, b) {
-  // Convert to Cartesian approximation using lat/lng degrees -> meters via haversine for small segments
   const A = { x: a.lng, y: a.lat };
   const B = { x: b.lng, y: b.lat };
   const P = { x: p.lng, y: p.lat };
@@ -55,6 +120,7 @@ function pointToSegmentDistance(p, a, b) {
   const AP = { x: P.x - A.x, y: P.y - A.y };
   const ab2 = AB.x * AB.x + AB.y * AB.y;
   if (ab2 === 0) return haversineDistance(p, a);
+
   let t = (AP.x * AB.x + AP.y * AB.y) / ab2;
   t = Math.max(0, Math.min(1, t));
   const closest = { lat: A.y + AB.y * t, lng: A.x + AB.x * t };
@@ -72,83 +138,78 @@ function distanceToPolyline(p, poly) {
   return min;
 }
 
-// Save a planned route for a user
+// --- Routes ---
+// Save a planned route
 app.post("/api/user/route", (req, res) => {
   const { userId, route } = req.body;
   if (!userId || !Array.isArray(route)) return res.status(400).json({ error: "userId and route required" });
   routes.set(userId, route);
-  return res.json({ ok: true });
+  res.json({ ok: true });
 });
 
-// Receive live location updates
+// Receive live location
 app.post("/api/user/location", (req, res) => {
   const { userId, lat, lng, timestamp } = req.body;
   if (!userId || typeof lat !== "number" || typeof lng !== "number") {
     return res.status(400).json({ error: "userId, lat, lng required" });
   }
-  // Log incoming location payload for debugging/inspection
-  console.log(`Received location POST from ${userId}: lat=${lat}, lng=${lng}, timestamp=${timestamp || Date.now()}`);
 
   const loc = { lat, lng, timestamp: timestamp || Date.now() };
   const existing = recentLocations.get(userId) || [];
   existing.push(loc);
-  // Keep last 100 locations
   recentLocations.set(userId, existing.slice(-100));
 
   const planned = routes.get(userId);
   let offRoute = false;
   let distance = null;
+
   if (planned) {
     distance = distanceToPolyline(loc, planned);
-    const thresholdMeters = 100; // configurable: mark off-route if >100m
+    const thresholdMeters = 100;
     offRoute = distance > thresholdMeters;
     if (offRoute) {
       const alert = { userId, lat, lng, timestamp: loc.timestamp, type: "off_route", distance };
       alerts.push(alert);
       console.log("ALERT:", alert);
-      // Log that we're emitting via Socket.IO as well
-      console.log(`Emitting alert for ${userId} via Socket.IO`);
-      // Emit real-time alert to connected clients
       io.emit("alert", alert);
     }
   }
 
-  return res.json({ ok: true, offRoute, distance });
+  res.json({ ok: true, offRoute, distance });
 });
 
+// Get alerts
 app.get("/api/user/:userId/alerts", (req, res) => {
   const userId = req.params.userId;
-  const userAlerts = alerts.filter((a) => a.userId === userId);
-  res.json(userAlerts);
+  res.json(alerts.filter(a => a.userId === userId));
 });
 
+// Get route
 app.get("/api/user/:userId/route", (req, res) => {
   const userId = req.params.userId;
   res.json(routes.get(userId) || []);
 });
 
-// Return recent locations for a user (last N)
+// Get recent locations
 app.get("/api/user/:userId/locations", (req, res) => {
   const userId = req.params.userId;
-  const existing = recentLocations.get(userId) || [];
-  res.json(existing);
+  res.json(recentLocations.get(userId) || []);
 });
 
-// Clear recent locations for a user (debug)
+// Clear recent locations
 app.delete("/api/user/:userId/locations", (req, res) => {
   const userId = req.params.userId;
   recentLocations.set(userId, []);
   res.json({ ok: true });
 });
 
-// Debug: emit an arbitrary alert via POST for testing WebSocket clients
+// Debug emit alert
 app.post('/api/debug/emit-alert', (req, res) => {
   const alert = req.body;
   if (!alert || !alert.userId || typeof alert.lat !== 'number' || typeof alert.lng !== 'number') {
     return res.status(400).json({ error: 'alert with userId, lat, lng required' });
   }
   alerts.push(alert);
-  console.log('Debug emit alert:', alert);
   io.emit('alert', alert);
   res.json({ ok: true, emitted: alert });
 });
@@ -157,12 +218,10 @@ app.post('/api/debug/emit-alert', (req, res) => {
 app.get('/api/directions', async (req, res) => {
   const { origin, destination, mode = 'driving' } = req.query;
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  if (!origin || !destination || !apiKey) {
-    return res.status(400).json({ error: 'Missing origin, destination, or API key' });
-  }
-  const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=${mode}&key=${apiKey}`;
+  if (!origin || !destination || !apiKey) return res.status(400).json({ error: 'Missing origin, destination, or API key' });
+
   try {
-    const response = await fetch(url);
+    const response = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=${mode}&key=${apiKey}`);
     const data = await response.json();
     res.json(data);
   } catch (err) {
@@ -170,93 +229,171 @@ app.get('/api/directions', async (req, res) => {
   }
 });
 
-// User registration (mobile + aadhaar + password) - MYSQL VERSION
 app.post('/api/user/register', async (req, res) => {
   try {
     const { mobile, aadhaar, password, name } = req.body;
-    if (!mobile || (!password && !aadhaar)) {
-      return res.status(400).json({ error: 'mobile and (password or aadhaar) required' });
+    if (!mobile || mobile.length < 10) {
+      return res.status(400).json({ error: 'Valid mobile number required' });
     }
-    
-    const password_hash = password ? await bcrypt.hash(password, 10) : null;
-    
-    // MySQL syntax with proper INSERT ... ON DUPLICATE KEY UPDATE
-    const insertSQL = `
-      INSERT INTO users (mobile, aadhaar, password_hash, name) 
-      VALUES (?, ?, ?, ?) 
-      ON DUPLICATE KEY UPDATE 
-        aadhaar = VALUES(aadhaar), 
-        password_hash = VALUES(password_hash), 
-        name = VALUES(name)
-    `;
-    
-    await query(insertSQL, [mobile, aadhaar || null, password_hash, name || null]);
-    
-    // Get the user data back
-    const selectResult = await query('SELECT id, mobile, name, created_at FROM users WHERE mobile = ?', [mobile]);
-    const user = selectResult.rows[0];
-    
+    if (!password && !aadhaar) {
+      return res.status(400).json({ error: 'Password or Aadhaar required' });
+    }
+    if (aadhaar && aadhaar.length !== 12) {
+      return res.status(400).json({ error: 'Aadhaar must be 12 digits' });
+    }
+    const password_hash = password ? await bcrypt.hash(password, 12) : null;
+    const users = db.collection('users');
+    // Check if user already exists
+    const existingUser = await users.findOne({ mobile });
+    if (existingUser) {
+      // Update existing user
+      await users.updateOne(
+        { mobile },
+        { $set: { aadhaar: aadhaar || null, password_hash, name: name || null, updated_at: new Date() } }
+      );
+    } else {
+      // Insert new user
+      await users.insertOne({
+        mobile,
+        aadhaar: aadhaar || null,
+        password_hash,
+        name: name || null,
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+    }
+    // Fetch the user data
+    const user = await users.findOne({ mobile }, { projection: { password_hash: 0 } });
+    if (!user) {
+      return res.status(500).json({ error: 'User creation failed' });
+    }
     res.json({ ok: true, user });
   } catch (err) {
-    console.warn('Register error', err);
-    res.status(500).json({ error: 'registration_failed' });
+    console.error('Register error:', err);
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'Mobile number already exists' });
+    }
+    res.status(500).json({ error: 'Registration failed', details: err.message });
   }
 });
 
-// User login (mobile + password) - MYSQL VERSION
+// OTP-based login: Step 1 - verify password, generate OTP, require OTP verification
 app.post('/api/user/login', async (req, res) => {
   try {
-    const { mobile, password } = req.body;
-    if (!mobile || !password) {
-      return res.status(400).json({ error: 'mobile and password required' });
+    const { mobile, name, password } = req.body;
+    if ((!mobile && !name) || !password) {
+      return res.status(400).json({ error: 'Mobile or username and password required' });
     }
-    
-    // MySQL syntax with ? placeholders
-    const r = await query('SELECT id, mobile, password_hash, name FROM users WHERE mobile = ?', [mobile]);
-    const user = r.rows[0];
-    
-    if (!user) {
-      return res.status(401).json({ error: 'invalid_credentials' });
-    }
-    
-    const ok = user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
-    if (!ok) {
-      return res.status(401).json({ error: 'invalid_credentials' });
-    }
-    
-    res.json({ 
-      ok: true, 
-      user: { 
-        id: user.id, 
-        mobile: user.mobile, 
-        name: user.name 
-      } 
+    const users = db.collection('users');
+    // Find user by mobile or name
+    const user = await users.findOne({
+      $or: [
+        ...(mobile ? [{ mobile }] : []),
+        ...(name ? [{ name }] : [])
+      ]
     });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    if (!user.password_hash) {
+      return res.status(401).json({ error: 'Password not set for this account' });
+    }
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    // Generate OTP (6 digit)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    const userKey = mobile || name;
+    otpStore.set(userKey, { otp, expiresAt, userId: user._id });
+    // Send OTP via SMS using Twilio
+    if (mobile) {
+      try {
+        await twilioClient.messages.create({
+          body: `Your Safe App OTP is: ${otp}`,
+          from: TWILIO_PHONE_NUMBER,
+          to: mobile.startsWith('+') ? mobile : `+91${mobile}` // assumes Indian numbers if not international
+        });
+      } catch (smsErr) {
+        console.error('Failed to send OTP SMS:', smsErr);
+        return res.status(500).json({ error: 'Failed to send OTP SMS' });
+      }
+    }
+    res.json({ ok: true, otpRequired: true, message: 'OTP sent' });
   } catch (err) {
-    console.warn('Login error', err);
-    res.status(500).json({ error: 'login_failed' });
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed', details: err.message });
   }
 });
 
-// Initialize DB
-const initializeDatabase = async () => {
+// OTP-based login: Step 2 - verify OTP
+app.post('/api/user/verify-otp', async (req, res) => {
   try {
-    await ensureUsersTable();
-    console.log('Database initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize database:', error.message);
+    const { mobile, name, otp } = req.body;
+    if ((!mobile && !name) || !otp) {
+      return res.status(400).json({ error: 'Mobile or username and OTP required' });
+    }
+    const userKey = mobile || name;
+    const otpEntry = otpStore.get(userKey);
+    if (!otpEntry || otpEntry.otp !== otp) {
+      return res.status(401).json({ error: 'Invalid OTP' });
+    }
+    if (Date.now() > otpEntry.expiresAt) {
+      otpStore.delete(userKey);
+      return res.status(401).json({ error: 'OTP expired' });
+    }
+    // OTP valid, fetch user
+    const users = db.collection('users');
+    const user = await users.findOne({
+      $or: [
+        ...(mobile ? [{ mobile }] : []),
+        ...(name ? [{ name }] : [])
+      ]
+    });
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    otpStore.delete(userKey);
+    res.json({
+      ok: true,
+      user: {
+        id: user._id,
+        mobile: user.mobile,
+        name: user.name
+      }
+    });
+  } catch (err) {
+    console.error('OTP verify error:', err);
+    res.status(500).json({ error: 'OTP verification failed', details: err.message });
   }
-};
+});
 
+// Add cleanup for in-memory stores to prevent memory leaks
+setInterval(() => {
+  // Clean old alerts (keep only last 1000)
+  if (alerts.length > 1000) {
+    alerts.splice(0, alerts.length - 1000);
+  }
+  
+  // Clean old locations (older than 24 hours)
+  const dayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  for (const [userId, locations] of recentLocations.entries()) {
+    const filtered = locations.filter(loc => loc.timestamp > dayAgo);
+    recentLocations.set(userId, filtered);
+  }
+}, 60000); // Run every minute
+
+// --- Initialize MongoDB & start server ---
+let db;
 const PORT = process.env.PORT || 4100;
 httpServer.listen(PORT, async () => {
-  console.log(`Safe-app backend listening on http://localhost:${PORT}`);
-  
-  // Test connection and initialize database
-  const connected = await testConnection();
-  if (connected) {
-    await initializeDatabase();
-  } else {
-    console.error('Could not establish database connection');
+  try {
+    db = await connectDB();
+    console.log('Database initialized successfully');
+    console.log(`Safe-app backend listening on http://localhost:${PORT}`);
+  } catch (err) {
+    console.error('❌ Could not establish MongoDB connection:', err.message);
+    process.exit(1);
   }
 });
