@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import GoogleMapDashboard from './GoogleMapDashboard';
 import SafeTourMap from './SafeTourMap';
 import { 
   Shield, 
@@ -110,6 +111,19 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole = 'traveler' }) => {
     </div>
   );
 
+  // Geolocation state for Google Maps
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setUserLocation({ lat: 28.6139, lng: 77.2090 }) // fallback: Delhi
+      );
+    } else {
+      setUserLocation({ lat: 28.6139, lng: 77.2090 });
+    }
+  }, []);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto p-6 space-y-6">
@@ -191,7 +205,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole = 'traveler' }) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <SafeTourMap height="h-[400px]" showControls={true} />
+                  <GoogleMapDashboard userLocation={userLocation} />
+                  <div className="text-center text-muted-foreground mt-2 text-sm">Red circles/markers show dummy dangerous zones</div>
                 </CardContent>
               </Card>
             </div>
@@ -300,6 +315,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole = 'traveler' }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard;

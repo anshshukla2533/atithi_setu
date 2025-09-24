@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Dashboard from '@/components/Dashboard';
 import SafeTourMap from '@/components/SafeTourMap';
+import GoogleMapDanger from '@/components/GoogleMapDanger';
 import { 
   Shield, 
   MapPin, 
@@ -18,12 +19,17 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
 
 type UserRole = 'traveler' | 'admin' | 'friend' | null;
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>('landing');
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const { user } = useAuth();
+
+  // Get emergency contact number (first one if exists)
+  const emergencyNumber = user?.emergencyContacts?.[0]?.phoneNumber || '112'; // 112 is India police emergency
 
   const handleRoleSelect = (role: UserRole) => {
     setUserRole(role);
@@ -35,7 +41,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+  <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30" style={{ fontSize: '1rem' }}>
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-info/5 to-safe/5" />
@@ -81,147 +87,130 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Demo Map */}
-          <div className="max-w-5xl mx-auto">
-            <SafeTourMap height="h-[500px]" showControls={true} />
+          {/* Google Map with Danger Zones */}
+          <div className="max-w-5xl mx-auto my-8">
+            <h2 className="text-2xl font-bold mb-4 text-center">Live Area Map (Demo)</h2>
+            <GoogleMapDanger />
+            <div className="text-center text-muted-foreground mt-2 text-sm">Red circles show dummy dangerous zones</div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
       <section className="py-20 bg-gradient-to-br from-muted/20 to-background">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="container mx-auto px-4" style={{ maxWidth: '90rem' }}>
+          <div className="text-center mb-12" style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>
               Complete Safety Ecosystem
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Monitor, track, and respond to travel situations with real-time maps, 
-              alerts, and peer-to-peer networking
+            <p style={{ fontSize: '1.125rem', color: 'var(--muted-foreground)', maxWidth: '40em', margin: '0 auto' }}>
+              Monitor, track, and respond to travel situations with real-time maps, alerts, and peer-to-peer networking
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            <Card className="bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <div className="p-3 bg-primary/10 rounded-full w-fit">
-                  <Navigation className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle>Real-Time Tracking</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Live location updates with route comparison between planned vs actual paths. 
-                  Instant alerts for deviations from safe routes.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <div className="p-3 bg-danger/10 rounded-full w-fit">
-                  <AlertTriangle className="w-6 h-6 text-danger" />
-                </div>
-                <CardTitle>Smart Alerts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Color-coded risk zones with automated alerts for high-risk areas. 
-                  Instant notifications to friends and authorities when needed.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <div className="p-3 bg-safe/10 rounded-full w-fit">
-                  <Users className="w-6 h-6 text-safe" />
-                </div>
-                <CardTitle>Friend Network</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Mesh network for peer-to-peer location sharing. Stay connected 
-                  with your travel circle both online and offline.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <div className="p-3 bg-info/10 rounded-full w-fit">
-                  <Globe className="w-6 h-6 text-info" />
-                </div>
-                <CardTitle>Offline Support</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Cached map tiles and queued updates ensure functionality 
-                  even without internet connection. Critical for remote areas.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <div className="p-3 bg-caution/10 rounded-full w-fit">
-                  <Shield className="w-6 h-6 text-caution" />
-                </div>
-                <CardTitle>Admin Dashboard</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Comprehensive monitoring for authorities with all active travelers, 
-                  unacknowledged alerts, and response coordination.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <div className="p-3 bg-primary/10 rounded-full w-fit">
-                  <Smartphone className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle>Mobile Ready</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Optimized for mobile devices with native map integration, 
-                  GPS tracking, and push notifications for instant alerts.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Status Indicators */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-safe/10 rounded-full">
-                <CheckCircle className="w-8 h-8 text-safe" />
-              </div>
-              <h3 className="font-semibold mb-1">24 Active</h3>
-              <p className="text-sm text-muted-foreground">Safe Travelers</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-caution/10 rounded-full">
-                <AlertTriangle className="w-8 h-8 text-caution" />
-              </div>
-              <h3 className="font-semibold mb-1">3 Alerts</h3>
-              <p className="text-sm text-muted-foreground">Need Attention</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-info/10 rounded-full">
-                <Wifi className="w-8 h-8 text-info" />
-              </div>
-              <h3 className="font-semibold mb-1">18 Online</h3>
-              <p className="text-sm text-muted-foreground">Friends Connected</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-muted/10 rounded-full">
-                <WifiOff className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold mb-1">6 Offline</h3>
-              <p className="text-sm text-muted-foreground">Queued Updates</p>
+          <div
+            className="grid mb-16"
+            style={{
+              gridTemplateColumns: '1fr',
+              gap: '2rem',
+              marginBottom: '4rem',
+            }}
+          >
+            {/* Responsive grid for cards */}
+            {/* Use media queries for breakpoints */}
+            <style>{`
+              @media (min-width: 40em) {
+                .responsive-grid {
+                  grid-template-columns: repeat(2, 1fr);
+                }
+              }
+              @media (min-width: 64em) {
+                .responsive-grid {
+                  grid-template-columns: repeat(3, 1fr);
+                }
+              }
+            `}</style>
+            <div className="responsive-grid grid" style={{ gap: '2rem' }}>
+              {/* Real-Time Tracking: Go to /live-tracking */}
+              <a href="/live-tracking" style={{ textDecoration: 'none' }}>
+                <Card className="cursor-pointer bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300" style={{ fontSize: '1em', padding: '1.5em' }}>
+                  <CardHeader style={{ paddingBottom: '1em' }}>
+                    <div style={{ padding: '1em', background: 'var(--primary-10)', borderRadius: '50%', width: 'fit-content', margin: '0 auto' }}>
+                      <Navigation style={{ width: '2em', height: '2em', color: 'var(--primary)' }} />
+                    </div>
+                    <CardTitle style={{ fontSize: '1.25em', fontWeight: 600, marginTop: '0.5em' }}>Real-Time Tracking</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '1em' }}>
+                      Live location updates with route comparison between planned vs actual paths. Instant alerts for deviations from safe routes.
+                    </p>
+                  </CardContent>
+                </Card>
+              </a>
+              {/* Smart Alerts: Go to /alerts */}
+              <a href="/alerts" style={{ textDecoration: 'none' }}>
+                <Card className="cursor-pointer bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300" style={{ fontSize: '1em', padding: '1.5em' }}>
+                  <CardHeader style={{ paddingBottom: '1em' }}>
+                    <div style={{ padding: '1em', background: 'var(--danger-10)', borderRadius: '50%', width: 'fit-content', margin: '0 auto' }}>
+                      <AlertTriangle style={{ width: '2em', height: '2em', color: 'var(--danger)' }} />
+                    </div>
+                    <CardTitle style={{ fontSize: '1.25em', fontWeight: 600, marginTop: '0.5em' }}>Smart Alerts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '1em' }}>
+                      Color-coded risk zones with automated alerts for high-risk areas. Instant notifications to friends and authorities when needed.
+                    </p>
+                  </CardContent>
+                </Card>
+              </a>
+              {/* Friend Network: Go to /friend-network */}
+              <a href="/friend-network" style={{ textDecoration: 'none' }}>
+                <Card className="cursor-pointer bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300" style={{ fontSize: '1em', padding: '1.5em' }}>
+                  <CardHeader style={{ paddingBottom: '1em' }}>
+                    <div style={{ padding: '1em', background: 'var(--safe-10)', borderRadius: '50%', width: 'fit-content', margin: '0 auto' }}>
+                      <Users style={{ width: '2em', height: '2em', color: 'var(--safe)' }} />
+                    </div>
+                    <CardTitle style={{ fontSize: '1.25em', fontWeight: 600, marginTop: '0.5em' }}>Friend Network</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '1em' }}>
+                      Mesh network for peer-to-peer location sharing. Stay connected with your travel circle both online and offline.
+                    </p>
+                  </CardContent>
+                </Card>
+              </a>
+              {/* Offline Support: Go to /friend-network (mesh network) */}
+              <a href="/friend-network" style={{ textDecoration: 'none' }}>
+                <Card className="cursor-pointer bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300" style={{ fontSize: '1em', padding: '1.5em' }}>
+                  <CardHeader style={{ paddingBottom: '1em' }}>
+                    <div style={{ padding: '1em', background: 'var(--info-10)', borderRadius: '50%', width: 'fit-content', margin: '0 auto' }}>
+                      <Globe style={{ width: '2em', height: '2em', color: 'var(--info)' }} />
+                    </div>
+                    <CardTitle style={{ fontSize: '1.25em', fontWeight: 600, marginTop: '0.5em' }}>Offline Support</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '1em' }}>
+                      Cached map tiles and queued updates ensure functionality even without internet connection. Critical for remote areas.
+                    </p>
+                  </CardContent>
+                </Card>
+              </a>
+              {/* Admin Dashboard: Go to /admin */}
+              <a href="/admin" style={{ textDecoration: 'none' }}>
+                <Card className="cursor-pointer bg-gradient-to-br from-card to-card/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300" style={{ fontSize: '1em', padding: '1.5em' }}>
+                  <CardHeader style={{ paddingBottom: '1em' }}>
+                    <div style={{ padding: '1em', background: 'var(--caution-10)', borderRadius: '50%', width: 'fit-content', margin: '0 auto' }}>
+                      <Shield style={{ width: '2em', height: '2em', color: 'var(--caution)' }} />
+                    </div>
+                    <CardTitle style={{ fontSize: '1.25em', fontWeight: 600, marginTop: '0.5em' }}>Admin Dashboard</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '1em' }}>
+                      Comprehensive monitoring for authorities with all active travelers, unacknowledged alerts, and response coordination.
+                    </p>
+                  </CardContent>
+                </Card>
+              </a>
             </div>
           </div>
         </div>
@@ -246,13 +235,19 @@ const Index = () => {
               <MapPin className="w-5 h-5 mr-2" />
               Get Started Now
             </Button>
-            <Button 
-              size="xl"
-              variant="emergency"
+            <a 
+              href={`tel:${emergencyNumber}`}
+              style={{ textDecoration: 'none' }}
             >
-              <Phone className="w-5 h-5 mr-2" />
-              Emergency Hotline
-            </Button>
+              <Button 
+                size="xl"
+                variant="emergency"
+                className="w-full"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                Emergency Hotline
+              </Button>
+            </a>
           </div>
         </div>
       </section>
