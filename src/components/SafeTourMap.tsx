@@ -138,23 +138,23 @@ const SafeTourMap: React.FC<SafeTourMapProps> = ({
       switch (location.type) {
         case 'traveler':
           el.style.backgroundColor = location.status === 'safe' ? '#22c55e' : '#eab308';
-          el.innerHTML = '👤';
+          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M12 2C10.9 2 10 2.9 10 4s.9 2 2 2 2-.9 2-2-.9-2-2-2m0 4c-2.7 0-5.8 1.3-6 5.2V22h2v-6h8v6h2v-10.8C17.8 7.3 14.7 6 12 6z"/></svg>`;
           break;
         case 'friend':
           el.style.backgroundColor = '#3b82f6';
-          el.innerHTML = '👥';
+          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3m0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`;
           break;
         case 'alert':
           el.style.backgroundColor = '#eab308';
-          el.innerHTML = '⚠️';
+          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
           break;
         case 'danger-zone':
           el.style.backgroundColor = '#ef4444';
-          el.innerHTML = '🚫';
+          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
           break;
         case 'safe-zone':
           el.style.backgroundColor = '#22c55e';
-          el.innerHTML = '🛡️';
+          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 11l-3-3 1.41-1.41L10 9.17l5.59-5.59L17 5l-7 7z"/></svg>`;
           break;
       }
 

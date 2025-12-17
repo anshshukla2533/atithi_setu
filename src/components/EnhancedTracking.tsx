@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GoogleMap, Marker, Circle, Polyline } from '@react-google-maps/api';
+import { Shield, AlertTriangle } from 'lucide-react';
 import { locationService, type SafeZone, type TrackingUser } from '@/services/location-service';
 
 const defaultCenter = { lat: 28.7041, lng: 77.1025 }; // New Delhi
@@ -61,14 +62,14 @@ export function EnhancedTracking() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <span className="text-green-500">🛡️</span>
+                            <Shield className="w-5 h-5 text-green-500" />
                           </TooltipTrigger>
                           <TooltipContent>In Safe Zone</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     )}
                     {user.sos && (
-                      <span className="text-red-500 font-bold animate-pulse">⚠️</span>
+                      <AlertTriangle className="w-5 h-5 text-red-500 font-bold animate-pulse" />
                     )}
                   </div>
                 </div>
