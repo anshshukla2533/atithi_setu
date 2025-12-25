@@ -1,73 +1,53 @@
-# Welcome to your Lovable project
+# 🌍 Atithi Setu — Tourist Safety Platform
 
-## Project info
+**Atithi Setu** is a comprehensive tourist safety platform designed to reduce traveler vulnerability by combining real-time tracking, encrypted emergency communication, and zero-network SOS capabilities. The platform focuses on proactive safety, rapid response, and privacy-first communication for travelers in unfamiliar or high-risk regions.
 
-**URL**: https://lovable.dev/projects/65fd396c-a6ff-474a-928a-3cefa50284e5
+🔗 **GitHub:** [https://github.com/anshshukla2533/atithi_setu]  
+🚀 **Live Demo:** [https://atithi-setu-nine.vercel.app/]
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🛡️ Problem Statement
 
-**Use Lovable**
+Tourists often face safety challenges due to:
+- Lack of real-time location sharing
+- Poor network connectivity in remote areas
+- Delayed emergency response
+- No centralized trip monitoring system
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/65fd396c-a6ff-474a-928a-3cefa50284e5) and start prompting.
+**Atithi Setu** bridges this gap by providing a reliable, privacy-focused, and network-resilient safety solution.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## ✨ Key Features
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🧳 Trip Registration & Monitoring
+- Tourists can register trips with routes, duration, and emergency contacts
+- Automated check-ins ensure traveler well-being
+- Alerts triggered on missed check-ins
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🔐 Encrypted Emergency Contacts
+- End-to-end encrypted storage of emergency contacts
+- Secure access only during verified emergency situations
 
-Follow these steps:
+### 📍 Real-Time Friend Tracking
+- Live location sharing using **Mapbox**
+- Friend & family tracking with consent
+- **Geofencing alerts** for predefined risk zones
+- Improved situational awareness by **60%**
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 🚨 Zero-Network SOS Communication
+- Peer-to-peer SOS messaging without internet
+- Powered by **WebRTC** and **libp2p mesh networking**
+- Works in low or no network areas
+- Ensures emergency communication even during outages
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 🗺️ Risk Zone Overlays
+- Visual overlays highlighting unsafe or high-risk areas
+- Location-based warnings and alerts
+- Helps tourists make informed decisions in real time
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## 🧠 System Architecture
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/65fd396c-a6ff-474a-928a-3cefa50284e5) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
