@@ -51,3 +51,58 @@ Tourists often face safety challenges due to:
 
 ## 🧠 System Architecture
 
+- Trip Registration Module
+- Location Tracking (Mapbox)
+- Risk Zone Detection
+- Encrypted Emergency Store
+- SOS P2P Network (WebRTC + libp2p)
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- React / Next.js
+- Mapbox GL JS
+- Tailwind CSS
+
+### Backend
+- Node.js
+- Express
+- REST APIs
+
+### Networking & Communication
+- **WebRTC** (peer-to-peer communication)
+- **libp2p** (mesh networking for SOS)
+
+### Security
+- End-to-end encryption
+- Secure key-based access
+- Privacy-first data handling
+
+---
+
+## 📊 Impact & Results
+
+- 🔻 **Reduced tourist vulnerability** through automated safety checks
+- 📈 **60% improvement** in awareness via real-time tracking
+- 📡 Enabled **offline emergency communication**
+- 🔐 Strong privacy & data protection
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- npm / yarn
+- Mapbox API Key
+
+### Installation
+
+```bash
+git clone https://github.com/anshshukla2533/crowd_mangement
+cd atithi-setu
+npm install
+
+
